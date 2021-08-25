@@ -1,0 +1,3 @@
+[submodule "Adafruit_CircuitPython_HID"]
+	path = circuitpython-libs/Adafruit_CircuitPython_HID
+	url = git@github.com:adafruit/Adafruit_CircuitPython_HID.git
