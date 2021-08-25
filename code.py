@@ -5,22 +5,14 @@ from adafruit_hid.keyboard import Keyboard
 import board
 import digitalio
 import json
+from buttons import btns
+BUTTON_COUNT = len(btns)
 
 print("Starting")
-
-btn1 = digitalio.DigitalInOut(board.GP0)
-btn1.direction = digitalio.Direction.INPUT
-btn1.pull = digitalio.Pull.UP
-
-btn2 = digitalio.DigitalInOut(board.GP1)
-btn2.direction = digitalio.Direction.INPUT
-btn2.pull = digitalio.Pull.UP
 
 led = digitalio.DigitalInOut(board.LED)
 led.direction = digitalio.Direction.OUTPUT
 
-btns = [btn1, btn2]
-BUTTON_COUNT = len(btns)
 key_combos = [[None]] * BUTTON_COUNT
 key_names = [""] * BUTTON_COUNT
 
@@ -55,15 +47,40 @@ for i in range(BUTTON_COUNT):
     keys = [str2key(k) for k in keys]
     key_combos[i] = keys
 
+
+KEY_TIMEOUT = 0.2 # The time after a key is repeated when held down
+USB_KEY_MIN_TIME = 0.02 # The time between sending muxed keys to host
+last_button_press_time = 0
+button_pressed_flags = [False] * BUTTON_COUNT
+button_last_sent_time = [0] * BUTTON_COUNT
+current_key_index = 0
+
+
+# Main loop
 while True:
-    t = time.time()
+    t = time.monotonic()
     led.value = t % 2
-    for i, (key, name, btn) in enumerate(zip(key_combos, key_names, btns)):
+    for i, btn in enumerate(btns):
         if not btn.value:  # Low -> pressed
-            if key is None:
-                print(f"Button {i} pressed, but not configured.")
-            else:
-                print(f"Button {i} pressed. Sending keys {name}")
-                keyboard.send(*key)
-            time.sleep(0.2)
+            # Check for timeout on individual buttons
+            if not button_pressed_flags[i] and t > button_last_sent_time[i] + KEY_TIMEOUT:
+                button_pressed_flags[i] = True
+                print(f"Setting flag for key{i}", button_last_sent_time[i], t + KEY_TIMEOUT)
+
+    # Round robin checking
+    if not button_pressed_flags[current_key_index]:
+        current_key_index = (current_key_index + 1) % BUTTON_COUNT
+    # If pressed, check that at least the time has passed
+    elif t > (last_button_press_time + USB_KEY_MIN_TIME):
+        keys = key_combos[current_key_index]
+        name = key_names[current_key_index]
+        if keys is None:
+            print(f"Button {current_key_index} pressed, but not configured.")
+        else:
+            print(f"Button {current_key_index} pressed. Sending keys {name}")
+            keyboard.send(*keys)
+            last_button_press_time = time.monotonic()
+        button_last_sent_time[current_key_index] = time.monotonic()
+        button_pressed_flags[current_key_index] = False
+        current_key_index = (current_key_index + 1) % BUTTON_COUNT
 
