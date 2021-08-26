@@ -1,13 +1,10 @@
 import board
 import digitalio
 
-btn1 = digitalio.DigitalInOut(board.GP0)
-btn1.direction = digitalio.Direction.INPUT
-btn1.pull = digitalio.Pull.UP
-
-btn2 = digitalio.DigitalInOut(board.GP1)
-btn2.direction = digitalio.Direction.INPUT
-btn2.pull = digitalio.Pull.UP
-
-btns = [btn1, btn2]
-
+pins = [board.GP0, board.GP1]
+btns = []
+for pin in pins:
+    btn = digitalio.DigitalInOut(pin)
+    btn.direction = digitalio.Direction.INPUT
+    btn.pull = digitalio.Pull.UP
+    btns.append(btn)

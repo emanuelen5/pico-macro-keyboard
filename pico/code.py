@@ -5,7 +5,7 @@ from adafruit_hid.keyboard import Keyboard
 import board
 import digitalio
 import json
-from buttons import btns
+from buttons import btns, pins
 BUTTON_COUNT = len(btns)
 
 print("Starting")
@@ -37,15 +37,16 @@ def str2key(key: str):
 
 
 for i in range(BUTTON_COUNT):
-    print(f"Getting config for item {i}")
+    print(f"Configuring key {i+1} ({pins[i]})")
     keys = config[i]
     if keys is None:
         key_names[i] = "None"
         key_combos[i] = None
-        continue
-    key_names[i] = " + ".join(keys)
-    keys = [str2key(k) for k in keys]
-    key_combos[i] = keys
+    else:
+        key_names[i] = " + ".join(keys)
+        keys = [str2key(k) for k in keys]
+        key_combos[i] = keys
+    print(f"  Got: {key_names[i]} = {keys}")
 
 
 KEY_TIMEOUT = 0.2 # The time after a key is repeated when held down
@@ -59,7 +60,7 @@ current_key_index = 0
 # Main loop
 while True:
     t = time.monotonic()
-    led.value = t % 2
+    led.value = int(t) % 2
     for i, btn in enumerate(btns):
         if not btn.value:  # Low -> pressed
             # Check for timeout on individual buttons
