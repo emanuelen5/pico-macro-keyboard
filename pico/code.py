@@ -5,7 +5,8 @@ from adafruit_hid.keyboard import Keyboard
 import board
 import digitalio
 import json
-from buttons import btns, pins
+import sys
+from buttons import btns, pins, CONFIG_BUTTON
 BUTTON_COUNT = len(btns)
 
 print("Starting")
@@ -17,6 +18,13 @@ key_combos = [[None]] * BUTTON_COUNT
 key_names = [""] * BUTTON_COUNT
 
 keyboard = Keyboard(usb_hid.devices)
+
+
+if not CONFIG_BUTTON.value:
+    print("Don't care about the config button. It only has special meaning for the boot script.")
+if not all(btn.value for btn in btns):
+    print("Not all buttons were 'up'. Exiting")
+    sys.exit(-1)
 
 try:
     with open("config.json", "rt") as f:
