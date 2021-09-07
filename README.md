@@ -36,7 +36,7 @@ The microcontroller was programmed with CircuitPython 7.0.0-rc.1.
 
 # Usage
 * Add mappings to config.json for the pins to key combinations. The file shall contain an array. Each element is an array of strings. Each string is the name of a key to press. The entry shall be null to leave the key unconfigured. E.g.
-  ```json
+  ```c
   [
     ["A"], // Key 1 presses a (note that it is just the key, not the upper case character)
     null, // Key 2 does not press any key combination
