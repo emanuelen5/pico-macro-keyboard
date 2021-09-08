@@ -58,10 +58,12 @@ for i in range(BUTTON_COUNT):
 
 
 KEY_TIMEOUT = 0.2 # The time after a key is repeated when held down
-USB_KEY_MIN_TIME = 0.02 # The time between sending muxed keys to host
-last_button_press_time = 0
+USB_KEY_MIN_TIME = 0.0005 # The time between sending muxed keys to host
+KEY_UP_TIME = KEY_TIMEOUT # The time after a key is released until it can be pressed again
+last_button_send_time = 0
 button_pressed_flags = [False] * BUTTON_COUNT
 button_last_sent_time = [0] * BUTTON_COUNT
+button_last_released_time = [0] * BUTTON_COUNT
 current_key_index = 0
 
 
@@ -75,12 +77,20 @@ while True:
             if not button_pressed_flags[i] and t > button_last_sent_time[i] + KEY_TIMEOUT:
                 button_pressed_flags[i] = True
                 print(f"Setting flag for key{i}", button_last_sent_time[i], t + KEY_TIMEOUT)
+            button_last_released_time[i] = 0
+        if btn.value:  # If buttons are released, they can be pressed again
+            if button_last_released_time[i] == 0:
+                button_last_released_time[i] = time.monotonic()
+            elif t > KEY_UP_TIME + button_last_released_time[i]:
+                if button_last_sent_time[i]:
+                    print(f"key{i} can now be pressed again!")
+                button_last_sent_time[i] = 0
 
     # Round robin checking
     if not button_pressed_flags[current_key_index]:
         current_key_index = (current_key_index + 1) % BUTTON_COUNT
     # If pressed, check that at least the time has passed
-    elif t > (last_button_press_time + USB_KEY_MIN_TIME):
+    elif t > (last_button_send_time + USB_KEY_MIN_TIME):
         keys = key_combos[current_key_index]
         name = key_names[current_key_index]
         if keys is None:
@@ -88,7 +98,7 @@ while True:
         else:
             print(f"Button {current_key_index} pressed. Sending keys {name}")
             keyboard.send(*keys)
-            last_button_press_time = time.monotonic()
+            last_button_send_time = time.monotonic()
         button_last_sent_time[current_key_index] = time.monotonic()
         button_pressed_flags[current_key_index] = False
         current_key_index = (current_key_index + 1) % BUTTON_COUNT
